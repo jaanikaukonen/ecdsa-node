@@ -1,7 +1,8 @@
 import { useState } from "react";
 import server from "./server";
+import "./Transfer.scss"
 
-function Transfer({ address, setBalance }) {
+function Transfer({ address, setBalance, users, activeUser }) {
   const [sendAmount, setSendAmount] = useState("");
   const [recipient, setRecipient] = useState("");
 
@@ -45,6 +46,15 @@ function Transfer({ address, setBalance }) {
           onChange={setValue(setRecipient)}
         ></input>
       </label>
+
+      <div className="contacts">
+        <h3>Your contacts</h3>
+        {users.map((user, idx) => {
+          if (activeUser && user.id !== activeUser.id) {
+            return <p key={idx} className="contact">{user.name}: {user.publicKey}</p>
+          }
+        })}
+      </div>
 
       <input type="submit" className="button" value="Transfer" />
     </form>

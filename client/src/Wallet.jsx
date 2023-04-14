@@ -1,29 +1,22 @@
 import server from "./server";
+import "./Wallet.scss";
 
-function Wallet({ address, setAddress, balance, setBalance }) {
-  async function onChange(evt) {
-    const address = evt.target.value;
-    setAddress(address);
-    if (address) {
-      const {
-        data: { balance },
-      } = await server.get(`balance/${address}`);
-      setBalance(balance);
-    } else {
-      setBalance(0);
-    }
+function Wallet({ address, setAddress, balance, setBalance, users, activeUser, setActiveUser }) {
+
+  const handleUserButtonClick = (user) => {
+    setActiveUser(user);
   }
 
   return (
     <div className="container wallet">
-      <h1>Your Wallet</h1>
+      <h1>Choose wallet user</h1>
 
-      <label>
-        Wallet Address
-        <input placeholder="Type an address, for example: 0x1" value={address} onChange={onChange}></input>
-      </label>
-
-      <div className="balance">Balance: {balance}</div>
+      <div className="buttons">
+        {users.map((user, idx) => {
+          return <button key={idx} className={activeUser === user ? 'active' : ''} onClick={() => handleUserButtonClick(user)}>{user.name}</button>
+        })}
+      </div>
+      <div className="balance">Your balance: {activeUser.balance}</div>
     </div>
   );
 }
