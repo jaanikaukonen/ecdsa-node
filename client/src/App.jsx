@@ -5,8 +5,6 @@ import { useEffect, useState } from "react";
 import server from "./server";
 
 function App() {
-  const [balance, setBalance] = useState(0);
-  const [address, setAddress] = useState("");
   const [activeUser, setActiveUser] = useState('');
   const [users, setUsers] = useState([]);
 
@@ -20,17 +18,11 @@ function App() {
   return (
     <div className="app">
       <Wallet
-        balance={balance}
-        setBalance={setBalance}
-        address={address}
-        setAddress={setAddress}
         users={users}
         activeUser={activeUser}
         setActiveUser={setActiveUser}
       />
-      <Transfer 
-        setBalance={setBalance} 
-        address={address}
+      <Transfer
         users={users}
         activeUser={activeUser}
       />

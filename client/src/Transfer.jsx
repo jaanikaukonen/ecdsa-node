@@ -1,8 +1,10 @@
 import { useState } from "react";
 import server from "./server";
 import "./Transfer.scss"
+import * as secp from "ethereum-cryptography/secp256k1"
+import { toHex } from "ethereum-cryptography/utils"
 
-function Transfer({ address, setBalance, users, activeUser }) {
+function Transfer({ users, activeUser }) {
   const [sendAmount, setSendAmount] = useState("");
   const [recipient, setRecipient] = useState("");
 
@@ -12,16 +14,29 @@ function Transfer({ address, setBalance, users, activeUser }) {
     evt.preventDefault();
 
     try {
-      const {
-        data: { balance },
-      } = await server.post(`send`, {
-        sender: address,
+      const message = {
         amount: parseInt(sendAmount),
-        recipient,
-      });
-      setBalance(balance);
-    } catch (ex) {
-      alert(ex.response.data.message);
+        recipient: recipient,
+      }
+
+      const response = await server.post(`sign`, {
+        message: message,
+        user: activeUser,
+      })
+
+      const isValid = secp.verify(response.data.signature, response.data.messageHash, activeUser.address)
+
+      if (isValid) {
+        await server.post(`send`, {
+          messageHash: response.data.messageHash,
+          signature: response.data.signature,
+          senderPublicKey: activeUser.publicKey,
+          amount: sendAmount,
+          recipientAddress: recipient,
+        });
+      }
+    } catch (error) {
+      console.log(error.message);
     }
   }
 
@@ -41,7 +56,7 @@ function Transfer({ address, setBalance, users, activeUser }) {
       <label>
         Recipient
         <input
-          placeholder="Type an address, for example: 0x2"
+          placeholder="Copy and paste address down below"
           value={recipient}
           onChange={setValue(setRecipient)}
         ></input>
@@ -50,8 +65,8 @@ function Transfer({ address, setBalance, users, activeUser }) {
       <div className="contacts">
         <h3>Your contacts</h3>
         {users.map((user, idx) => {
-          if (activeUser && user.id !== activeUser.id) {
-            return <p key={idx} className="contact">{user.name}: {user.publicKey}</p>
+          if (activeUser && user.address !== activeUser.address) {
+            return <p key={idx} className="contact">{user.name}: {user.address}</p>
           }
         })}
       </div>

@@ -1,7 +1,7 @@
 import server from "./server";
 import "./Wallet.scss";
 
-function Wallet({ address, setAddress, balance, setBalance, users, activeUser, setActiveUser }) {
+function Wallet({ users, activeUser, setActiveUser }) {
 
   const handleUserButtonClick = (user) => {
     setActiveUser(user);

@@ -4,35 +4,26 @@ const cors = require("cors");
 const port = 3042;
 const secp = require("ethereum-cryptography/secp256k1");
 const { keccak256 } = require("ethereum-cryptography/keccak");
-const { toHex } = require("ethereum-cryptography/utils");
+const { toHex, hexToBytes } = require("ethereum-cryptography/utils");
 
 app.use(cors());
 app.use(express.json());
 
-const balances = {
-  "0x1": 100,
-  "0x2": 50,
-  "0x3": 75,
-};
-
 const users = [
     {
-      id: 1,
       name: 'Alice',
       balance: 100,
-      publicKey: undefined,
+      address: undefined,
     },
     {
-      id: 2,
       name: 'Bob',
       balance: 50,
-      publicKey: undefined,
+      address: undefined,
     },
     {
-      id: 3,
       name: 'Leroy',
       balance: 75,
-      publicKey: undefined,
+      address: undefined,
     },
 ]
 
@@ -44,8 +35,8 @@ generateKeys = () => {
     const publicKey = secp.getPublicKey(privateKey)
     const keccak = toHex(keccak256(publicKey.slice(1)).slice(-20))
 
-    users[i].publicKey = keccak
-    privateKeys.push({ id: users[i].id, privateKey: privateKey })
+    users[i].address = keccak
+    privateKeys.push({ address: users[i].address, privateKey: privateKey })
   }
 }
 
@@ -55,33 +46,34 @@ app.get("/users", (req, res) => {
   res.send(users)
 })
 
-app.get("/balance/:address", (req, res) => {
-  const { address } = req.params;
-  const balance = balances[address] || 0;
-  res.send({ balance });
-});
+app.post("/sign", async (req, res) => {
+  const {message, user} = req.body;
+
+  const messageHash = toHex(keccak256(Uint8Array.from(message)));
+  const privateKey = privateKeys.find(key => key.address === user.address).privateKey;
+
+  const signature = await secp.sign(messageHash, privateKey);
+
+  res.send(
+    {
+      signature: signature,
+      messageHash: messageHash,
+    }
+  );
+})
 
 app.post("/send", (req, res) => {
-  const { sender, recipient, amount } = req.body;
-
-  setInitialBalance(sender);
-  setInitialBalance(recipient);
-
-  if (balances[sender] < amount) {
-    res.status(400).send({ message: "Not enough funds!" });
-  } else {
-    balances[sender] -= amount;
-    balances[recipient] += amount;
-    res.send({ balance: balances[sender] });
-  }
+  const { senderAddress, amount, recipientAddress } = req.body;
+  const sender = users.findIndex(user => user.address === senderAddress);
+  const recipient = users.findIndex(user => user.address === recipientAddress);
+    if (users[sender].balance < amount) {
+      res.status(400).send({ message: "Not enough funds!" });
+    } else {
+      users[sender].balance -= amount;
+      users[recipient].balance += amount;
+    }
 });
 
 app.listen(port, () => {
   console.log(`Listening on port ${port}!`);
 });
-
-function setInitialBalance(address) {
-  if (!balances[address]) {
-    balances[address] = 0;
-  }
-}
