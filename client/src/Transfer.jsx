@@ -14,27 +14,30 @@ function Transfer({ users, activeUser }) {
     evt.preventDefault();
 
     try {
-      const message = {
-        amount: parseInt(sendAmount),
-        recipient: recipient,
-      }
+      const message = `Send ${sendAmount} to address: ${recipient}`
 
       const response = await server.post(`sign`, {
         message: message,
         user: activeUser,
       })
 
-      const isValid = secp.verify(response.data.signature, response.data.messageHash, activeUser.address)
+      // const isSigned = secp.verify(response.data.signature, response.data.messageHash, activeUser.publicKey)
+      // console.log(isSigned)
 
-      if (isValid) {
-        await server.post(`send`, {
-          messageHash: response.data.messageHash,
-          signature: response.data.signature,
-          senderPublicKey: activeUser.publicKey,
-          amount: sendAmount,
-          recipientAddress: recipient,
-        });
-      }
+      console.log(response.data.messageHash, response.data.signature, response.data.recoveryBit)
+
+      // const rpk = secp.recoverPublicKey(response.data.messageHash, response.data.signature, response.data.recoveryBit)
+
+      // console.log(rpk)
+
+      // await server.post(`send`, {
+      //   amount: sendAmount,
+      //   recipientAddress: recipient,
+      //   signature: response.data.signature,
+      //   recoveryBit: response.data.recoveryBit,
+      //   messageHash: response.data.messageHash,
+      //   senderPublicKey: activeUser.publicKey,
+      // });
     } catch (error) {
       console.log(error.message);
     }
