@@ -4,7 +4,7 @@ import "./Transfer.scss"
 import * as secp from "ethereum-cryptography/secp256k1"
 import { toHex } from "ethereum-cryptography/utils"
 
-function Transfer({ users, activeUser }) {
+function Transfer({ users, activeUser, setUsers }) {
   const [sendAmount, setSendAmount] = useState("");
   const [recipient, setRecipient] = useState("");
 
@@ -21,23 +21,17 @@ function Transfer({ users, activeUser }) {
         user: activeUser,
       })
 
-      // const isSigned = secp.verify(response.data.signature, response.data.messageHash, activeUser.publicKey)
-      // console.log(isSigned)
+      if (!response.data.isValidSignature) {
+        throw new Error ('Not authorized to make a transaction.')
+      } else {
+        const response = await server.post(`send`, {
+        amount: parseInt(sendAmount),
+        recipientAddress: recipient,
+        senderAddress: activeUser.address,
+        });
 
-      console.log(response.data.messageHash, response.data.signature, response.data.recoveryBit)
-
-      // const rpk = secp.recoverPublicKey(response.data.messageHash, response.data.signature, response.data.recoveryBit)
-
-      // console.log(rpk)
-
-      // await server.post(`send`, {
-      //   amount: sendAmount,
-      //   recipientAddress: recipient,
-      //   signature: response.data.signature,
-      //   recoveryBit: response.data.recoveryBit,
-      //   messageHash: response.data.messageHash,
-      //   senderPublicKey: activeUser.publicKey,
-      // });
+        setUsers(response.data.users)
+      }
     } catch (error) {
       console.log(error.message);
     }

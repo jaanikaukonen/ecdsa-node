@@ -36,10 +36,10 @@ generateKeys = () => {
   for (let i = 0; i < users.length; i++) {
     const privateKey = toHex(secp.utils.randomPrivateKey())
     const publicKey = secp.getPublicKey(privateKey)
-    const keccak = toHex(keccak256(publicKey.slice(1)).slice(-20))
+    const address = toHex(keccak256(publicKey.slice(1)).slice(-20))
 
     users[i].publicKey = toHex(publicKey)
-    users[i].address = keccak
+    users[i].address = address
     privateKeys.push({ publicKey: users[i].publicKey, privateKey: privateKey })
   }
 }
@@ -64,10 +64,10 @@ app.post("/sign", async (req, res) => {
 
     const [signature, recoveryBit] = await secp.sign(messageHash, privateKey, { recovered: true });
 
+    const isValid = secp.verify(signature, messageHash, user.publicKey)
+
     res.send({
-      signature: signature,
-      recoveryBit: recoveryBit,
-      messageHash: messageHash,
+      isValidSignature: isValid,
     });
   } catch (error) {
     console.error("Error occurred:", error);
@@ -76,22 +76,17 @@ app.post("/sign", async (req, res) => {
 })
 
 app.post("/send", (req, res) => {
-  const { amount, recipientAddress, signature, recoveryBit, messageHash, senderPublicKey } = req.body;
+  const { amount, recipientAddress, senderAddress } = req.body;
 
-  //console.log(signature, messageHash, senderPublicKey)
-
-  const rpk = secp.recoverPublicKey(messageHash, signature, recoveryBit)
-
-    console.log(rpk)
-
-  // const sender = users.findIndex(user => user.address === senderAddress);
-  // const recipient = users.findIndex(user => user.address === recipientAddress);
-  //   if (users[sender].balance < amount) {
-  //     res.status(400).send({ message: "Not enough funds!" });
-  //   } else {
-  //     users[sender].balance -= amount;
-  //     users[recipient].balance += amount;
-  //   }
+  const sender = users.findIndex(user => user.address === senderAddress);
+  const recipient = users.findIndex(user => user.address === recipientAddress);
+    if (users[sender].balance < amount) {
+      res.status(400).send({ message: "Not enough funds!" });
+    } else {
+      users[sender].balance -= amount;
+      users[recipient].balance += amount;
+      res.status(200).send({ message: "Transaction complete.", users: users })
+    }
 });
 
 app.listen(port, () => {

@@ -25,6 +25,7 @@ function App() {
       <Transfer
         users={users}
         activeUser={activeUser}
+        setUsers={setUsers}
       />
     </div>
   );
